@@ -14,24 +14,25 @@ sectors = {
 
 all_tickers = [t for s in sectors.values() for t in s]
 
-print("Downloading price data... (takes ~1 min)")
-data = yf.download(
-    all_tickers,
-    start="2019-01-01",
-    end="2024-01-01",
-    auto_adjust=True,
-    progress=True
-)
+# Download one ticker at a time — avoids MultiIndex issues completely
+frames = []
+for ticker in all_tickers:
+    try:
+        df = yf.download(ticker, start="2019-01-01", end="2024-01-01",
+                        auto_adjust=True, progress=False)
+        frames.append(df[["Close"]].rename(columns={"Close": ticker}))
+        print(f"  {ticker}: {len(df)} rows")
+    except Exception as e:
+        print(f"  {ticker}: FAILED — {e}")
 
-prices = data["Close"]
+prices = pd.concat(frames, axis=1)
+prices.index.name = "Date"
 prices.to_csv("data/raw/prices.csv")
-print(f"Saved prices: {prices.shape[0]} days, {prices.shape[1]} stocks")
+print(f"\nSaved: {prices.shape[1]} stocks, {prices.shape[0]} days")
+print("Sample:\n", prices.head(2))
 
-sector_map = []
-for sector, tickers in sectors.items():
-    for t in tickers:
-        sector_map.append({"ticker": t, "sector": sector})
-
+# Save sector map
+sector_map = [{"ticker": t, "sector": s}
+              for s, tickers in sectors.items() for t in tickers]
 pd.DataFrame(sector_map).to_csv("data/raw/sectors.csv", index=False)
-print("Saved sector mapping")
-print("Done! Check data/raw/ folder")
+print("Saved sectors.csv")
