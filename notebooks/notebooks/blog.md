@@ -277,7 +277,6 @@ below summarises the estimated beta coefficient from each sector regression,
 with the p-value and R-squared shown in the accompanying table.
 
 
-
 ```python
 sector_results = {}
 for sector in df["sector"].unique():
@@ -509,16 +508,48 @@ strategy, asset mix, and geographic exposure. The result is a sector where
 picking the right individual stock matters enormously, rather than sector
 membership providing a reliable signal.
 
+## Stock rankings: who delivered the best returns?
+
+The chart below ranks all 25 stocks by annualised return, making it easy to
+see which individual stocks drove performance and whether top performers
+tended to be high or low volatility names.
+
+
+```python
+# Import the missing Patch class
+from matplotlib.patches import Patch
+
+ranked = df.sort_values("annual_return", ascending=True)
+
+fig, ax = plt.subplots(figsize=(8, 9))
+colors = [PALETTE[s] for s in ranked["sector"]]
+ax.barh(ranked["ticker"], ranked["annual_return"], color=colors, alpha=0.85)
+ax.axvline(0, color="#888780", linewidth=0.8)
+ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x,_: f"{x:.0%}"))
+ax.set_xlabel("Annualised Return", fontsize=11)
+ax.set_title("All 25 stocks ranked by annualised return (2019-2024)", fontsize=13)
+# Now Patch is properly imported and can be used to create legend elements
+legend_elements = [Patch(facecolor=PALETTE[s], label=s) for s in PALETTE]
+ax.legend(handles=legend_elements, frameon=False, fontsize=9)
+sns.despine()
+plt.tight_layout()
+plt.savefig("../figures/05_ranked_returns.png", dpi=150)
+plt.show()
+```
+
+
+    
+![png](notebooks/blog_files/notebooks/blog_13_0.png)
+    
+
+
 ## How does volatility evolve over time?
 
-So far we have treated volatility as a fixed characteristic of each stock,
-summarised by a single annualised number computed over five years. This is
-a useful simplification, but it obscures the dynamic reality that volatility
-is anything but constant. To illustrate how risk actually behaves through
-time, the chart below shows 30-day rolling volatility for three representative
-stocks: NVDA(high-risk technology), AMZN(mid-risk consumer), and JNJ(low-risk healthcare). These were chosen to represent high, medium,
-and low risk profiles. 
-
+Volatility is not a static property of a stock. It spikes during market stress
+and compresses during calm conditions. The 30-day rolling volatility chart
+below illustrates this for three stocks representing different risk profiles:
+NVDA (high-risk Technology), AMZN (mid-risk Consumer), and JNJ (low-risk
+Healthcare).
 
 
 ```python
@@ -542,7 +573,7 @@ plt.show()
 
 
     
-![png](notebooks/blog_files/notebooks/blog_13_0.png)
+![png](notebooks/blog_files/notebooks/blog_15_0.png)
     
 
 
@@ -576,64 +607,61 @@ figure to represent each stock's risk profile is therefore a reasonable
 approximation, even if it necessarily averages across very different periods.
 
 
+## Correlation between risk and return metrics
+
+The heatmap below shows the pairwise correlations between our three key
+metrics across all 25 stocks, giving a clean statistical summary of how
+strongly the variables relate to one another.
+
+
+```python
+corr = df[["annual_return","annual_volatility","sharpe_ratio"]].corr()
+corr.columns = ["Return","Volatility","Sharpe"]
+corr.index = ["Return","Volatility","Sharpe"]
+
+fig, ax = plt.subplots(figsize=(6, 5))
+sns.heatmap(corr, annot=True, fmt=".2f", cmap="RdYlGn",
+            center=0, ax=ax, linewidths=0.5, annot_kws={"size": 12})
+ax.set_title("Correlation matrix: return, volatility and Sharpe ratio", fontsize=13)
+plt.tight_layout()
+plt.savefig("../figures/06_correlation_heatmap.png", dpi=150)
+plt.show()
+```
+
+
+    
+![png](notebooks/blog_files/notebooks/blog_18_0.png)
+    
+
+
+All three stocks experienced a dramatic volatility spike in early 2020
+coinciding with the COVID-19 pandemic. NVDA's volatility briefly exceeded
+100% on an annualised basis while JNJ remained comparatively contained.
+The post-2022 period shows elevated volatility across all stocks, reflecting
+uncertainty from rising interest rates, which disproportionately affected
+growth stocks like NVDA whose valuations depend heavily on discounted future
+cash flows.
+
+The ranking of stocks by volatility is relatively stable over time, with NVDA
+consistently above AMZN, which sits above JNJ. This persistence justifies
+using time-averaged volatility as a stock characteristic, even if it masks
+short-run variation.
+
 ## Conclusion
 
-This analysis examined whether the textbook risk-return tradeoff holds across
-25 large-cap US stocks between January 2019 and January 2024. Using OLS
-regression, sector fixed effects, and rolling volatility analysis, we find
-results that are consistent with theory in some respects but reveal important
-heterogeneity across sectors and time periods.
+This analysis examined whether the textbook risk-return tradeoff holds across 25 large-cap US stocks between January 2019 and January 2024. Using OLS regression, sector fixed effects, and rolling volatility analysis, we find results that are consistent with theory in some respects but reveal important heterogeneity across sectors and time periods.
 
-Across all stocks, higher volatility is positively associated with higher
-returns, offering partial support for the CAPM prediction. However, this
-relationship is substantially driven by sector composition rather than a
-universal risk premium. When sector fixed effects are added, the R-squared
-rises considerably, confirming that sector membership is a major determinant
-of returns and that the simple cross-sectional relationship overstates the
-strength of the risk-return tradeoff.
+Across all stocks, higher volatility is positively associated with higher returns, offering partial support for the CAPM prediction. However, this relationship is substantially driven by sector composition rather than a universal risk premium. When sector fixed effects are added, the R-squared rises considerably, confirming that sector membership is a major determinant of returns and that the simple cross-sectional relationship overstates the strength of the risk-return tradeoff.
 
-The sector-level analysis reveals striking differences. Technology is the
-one sector where the risk-return tradeoff appears relatively robust, with
-economically meaningful and positive coefficients. Finance shows a negative
-beta, suggesting within-sector volatility is not rewarded in financial stocks,
-likely because bank volatility is driven by credit and regulatory risk rather
-than priced market risk. Energy and Consumer sectors show near-zero
-relationships, consistent with the idea that idiosyncratic firm-level
-volatility in these industries is largely diversifiable and therefore not
-compensated by the market.
+The sector-level analysis reveals striking differences. Technology is the one sector where the risk-return tradeoff appears relatively robust, with economically meaningful and positive coefficients. Finance shows a negative beta, suggesting within-sector volatility is not rewarded in financial stocks, likely because bank volatility is driven by credit and regulatory risk rather than priced market risk. Energy and Consumer sectors show near-zero relationships, consistent with the idea that idiosyncratic firm-level volatility in these industries is largely diversifiable and therefore not compensated by the market.
 
-There are several important limitations to acknowledge. First, the sample of
-25 stocks is small by the standards of empirical asset pricing research,
-which limits statistical power and means individual outliers can heavily
-influence results. Second, the sample suffers from survivorship bias: all
-stocks are large-cap S&P 500 constituents that survived the full five-year
-period. Firms that were delisted, went bankrupt, or were acquired during this
-time are excluded entirely. These firms would disproportionately have had
-high volatility and poor returns, meaning our estimated risk-return
-relationship is likely biased upward. Third, the sample period is
-dominated by two unusual episodes: the COVID-19 shock of 2020 and the
-aggressive Federal Reserve tightening of 2022 to 2023. Both events had
-asymmetric effects across sectors, potentially distorting the estimated
-sector-level betas.
+There are several important limitations to acknowledge. First, the sample of 25 stocks is small by the standards of empirical asset pricing research, which limits statistical power and means individual outliers can heavily influence results. Second, the sample suffers from survivorship bias: all stocks are large-cap S&P 500 constituents that survived the full five-year period. Firms that were delisted, went bankrupt, or were acquired during this time are excluded entirely. These firms would disproportionately have had high volatility and poor returns, meaning our estimated risk-return relationship is likely biased upward. Third, the sample period is dominated by two unusual episodes: the COVID-19 shock of 2020 and the aggressive Federal Reserve tightening of 2022 to 2023. Both events had asymmetric effects across sectors, potentially distorting the estimated sector-level betas.
 
-Future research could address these limitations in several ways. Extending
-the sample to a broader universe of stocks, including smaller firms and
-international markets, would improve generalisability. Using a longer time
-horizon spanning multiple business cycles would reduce the influence of any
-single episode. Incorporating additional risk factors such as the Fama-French
-size and value factors would allow a cleaner test of whether volatility
-commands a premium after accounting for other well-known return predictors.
+Future research could address these limitations in several ways. Extending the sample to a broader universe of stocks, including smaller firms and international markets, would improve generalisability. Using a longer time horizon spanning multiple business cycles would reduce the influence of any single episode. Incorporating additional risk factors such as the Fama-French size and value factors would allow a cleaner test of whether volatility commands a premium after accounting for other well-known return predictors.
 
-Despite these limitations, the findings offer a nuanced and empirically
-grounded view of the risk-return relationship. The tradeoff is real but not
-uniform. Sector membership matters as much as volatility level in determining
-whether risk is rewarded. Investors seeking to exploit a volatility premium
-would do better to focus within high-growth sectors like Technology rather
-than assuming the premium applies uniformly across the entire market.
+Despite these limitations, the findings offer a nuanced and empirically grounded view of the risk-return relationship. The tradeoff is real but not uniform. Sector membership matters as much as volatility level in determining whether risk is rewarded. Investors seeking to exploit a volatility premium would do better to focus within high-growth sectors like Technology rather than assuming the premium applies uniformly across the entire market.
 
-Data: Yahoo Finance via yfinance API. Period: January 2019 to January 2024.
-Analysis: OLS regression with and without sector fixed effects, 30-day rolling
-volatility. All code available at the GitHub repository linked above.
+Data: Yahoo Finance via yfinance API. Period: January 2019 to January 2024. Analysis: OLS regression with and without sector fixed effects, 30-day rolling volatility. All code available at the GitHub repository linked above.
 
 
 ```python
@@ -646,7 +674,7 @@ print(f"Figures saved: {sorted(os.listdir('../figures/'))}")
     Analysis complete.
     Stocks analysed: 25
     Sectors: ['Consumer', 'Energy', 'Finance', 'Healthcare', 'Technology']
-    Figures saved: ['.gitkeep', '01_scatter_main.png', '02_sector_betas.png', '03_sharpe_by_sector.png', '04_rolling_volatility.png']
+    Figures saved: ['.gitkeep', '.ipynb_checkpoints', '01_scatter_main.png', '02_sector_betas.png', '03_sharpe_by_sector.png', '04_rolling_volatility.png', '05_ranked_returns.png', '06_correlation_heatmap.png']
 
 
 
