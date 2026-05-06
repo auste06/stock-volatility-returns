@@ -117,9 +117,9 @@ df[["annual_return","annual_volatility","sharpe_ratio"]].describe().round(3)
 
 One of the oldest ideas in finance is deceptively simple: if you want higher returns, you have to accept higher risk. This intuition underpins the Capital Asset Pricing Model (CAPM), developed by Sharpe (1964) and Lintner (1965), which remains one of the most widely taught frameworks in financial economics. Capital Asset Pricing Model (CAPM) depicts the risk-return tradeoff by predicting that an asset's expected return should be a linear function of its exposure to market-wide risk. Stocks that move more dramatically with the market, or that are simply more volatile, should offer investors a higher expected return as compensation for bearing that uncertainty. But while this sounds straightforward, the real world is rarely so tidy. Markets are complicated, and sometimes taking more risk doesn’t actually lead to bigger rewards. How closely risk and return are linked can depend on the industry, time period, or even how you measure risk in the first place.
 
-However, the empirical record is messier than the theory suggests. Fama and French (1992) famously found that beta is the CAPM measure of systematic risk. It had almost no power to explain cross-sectional variation in stock returns after controlling for size and book-to-market ratios.  Research has documented what is now called the low-volatility anomaly: stocks with lower historical volatility have tended to outperform their higher-volatility counterparts on a risk-adjusted basis. This directly inverts the CAPM prediction. Baker, Bradley and Wurgler (2011) attribute this partly to institutional investor behaviour and benchmark constraints that create artificial demand for high-volatility stocks. 
+However, the empirical record is messier than the theory suggests. Fama and French (1992) famously found that beta is the CAPM measure of systematic risk. It had almost no power to explain cross-sectional variation in stock returns after controlling for size and book-to-market ratios.  Research has documented what is now called the low-volatility anomaly: stocks with lower historical volatility have tended to outperform their higher-volatility counterparts on a risk-adjusted basis. This directly inverts the CAPM prediction. 
 
-So where does the truth lie? This project examines the question using five years of daily price data for 25 large-cap S&P 500 stocks across five sectors. Rather than simply testing the overall relationship, we dig into whether the risk-return tradeoff differs across sectors and whether it holds up once sector composition is accounted for via regression with fixed effects. I used a mix of number crunching, regression analysis, and charts to gain a clearer picture of the risk-reward link. The goal is not to definitively resolve a debate that has occupied financial economists for decades, but to bring real data to bear on it in a transparent and replicable way.
+This project examines the question using five years of daily price data for 25 large-cap S&P 500 stocks across five sectors. Rather than simply testing the overall relationship, we dig into whether the risk-return tradeoff differs across sectors and whether it holds up once sector composition is accounted for via regression with fixed effects. I used a mix of number crunching, regression analysis, and charts to gain a clearer picture of the risk-reward link. The goal is not to definitively resolve a debate that has occupied financial economists for decades, but to bring real data to bear on it in a transparent and replicable way.
 
 ## The data
 
@@ -251,14 +251,13 @@ print(f"Beta={m1.params['annual_volatility']:.3f}, p={m1.pvalues['annual_volatil
     Beta=0.519, p=0.052, R2=0.154
 
 
-There is a positive slope, which is at least consistent with the CAPM
-prediction. The regression coefficient suggests that for each additional
+There is a positive slope,this follows CAPM prediction. The regression coefficient suggests that for each additional
 percentage point of annualised volatility, annual returns increase by roughly
 the estimated beta. That said, the relationship is far from tight. The R-squared
 is modest, meaning volatility alone explains only a limited share of the
 variation in returns across stocks. Several stocks deviate substantially from
-the regression line in both directions, a reminder that firm-specific factors
-play a large role in determining returns over any given five-year window.
+the regression line in both directions. Highlighting that firm-specific factors
+play a large role in determining returns over a period.
 
 It is also worth asking whether the positive slope reflects a genuine risk
 premium or simply the fact that Technology stocks happen to sit in the
@@ -323,31 +322,11 @@ plt.show()
     
 
 
-The results are significant. Technology produces the largest
-positive beta, suggesting that within the technology sector, investors who
-took on more volatile stocks were rewarded with higher returns over our sample
-period. This is exactly what theory predicts, and it makes intuitive sense:
-the spread between a firm like NVDA and a firm like INTC in terms of both
-risk and return is substantial, and the market appears to have priced that
-difference over this period.
+The results are significant. Technology shows the strongest positive beta, which suggests that in this sector, higher risk was linked to higher returns over the sample period. That fits the theory and matches the large risk-return gap between stocks like NVDA and INTC.
 
-Healthcare and Consumer sectors tell a different story. Their betas are small
-and statistically insignificant, meaning we cannot confidently say that riskier
-stocks within these sectors outperformed safer ones. This is not particularly
-surprising. Both sectors are populated by firms with stable, recurring revenues
-whose stock volatility tends to reflect short-term sentiment or idiosyncratic
-news rather than fundamental uncertainty about long-run cash flows. If
-volatility is just noise rather than priced risk, we would not expect it to
-predict returns.
+Healthcare and Consumer look different. Their betas are small and not statistically significant, so we cannot say that riskier stocks in these sectors reliably outperformed safer ones. This may be because volatility here often reflects short-term news or market sentiment rather than true long-term uncertainty.
 
-Finance is perhaps the most thought-provoking result. The sector beta is
-strongly negative, meaning that within our financial stock sample, more volatile
-firms actually delivered lower returns. This likely reflects the particular
-character of financial sector risk. Bank and insurance company volatility often
-spikes in response to credit quality concerns, regulatory changes, or interest
-rate sensitivity rather than growth opportunities. Markets may not compensate
-investors for this kind of volatility in the same way they compensate for
-technology sector risk.
+Finance is the most interesting case. Its beta is clearly negative, meaning that within our sample, more volatile financial firms actually earned lower returns. This may be because financial volatility often comes from credit risk, regulation, or interest rates, which the market does not reward in the same way as technology risk.
 
 ## Does volatility still predict returns after controlling for sector?
 
@@ -436,17 +415,9 @@ comparison
 
 
 
-The comparison between the two models is important. Adding sector fixed effects
-increases the R-squared noticeably, confirming that knowing which sector a
+Adding sector fixed effects increases the R-squared noticeably, confirming that knowing which sector a
 stock belongs to helps substantially in predicting its return. More importantly,
-the coefficient on volatility changes between models. If it falls substantially
-in model 2 relative to model 1, that tells us the simple positive relationship
-was largely a composition effect: the cross-sectional correlation between
-volatility and returns exists partly because high-volatility sectors happen to
-also be high-return sectors, not because volatility itself is being priced
-within sectors. Interpreting this shift honestly is important: it suggests
-investors should be cautious about assuming higher volatility will automatically
-translate to higher returns within any given industry.
+the coefficient on volatility changes between models. If this effect becomes much weaker in model 2, it suggests that the simple positive relationship in model 1 was mostly driven by sector mix. In other words, high-volatility sectors may also be high-return sectors, rather than volatility itself causing higher returns within each sector. This is an important result because it means investors should not assume that more volatility automatically means more return inside every industry.
 
 ## Risk-adjusted performance: the Sharpe ratio by sector
 
@@ -456,13 +427,7 @@ the investor endured enormous swings to get there. The Sharpe ratio corrects
 for this by expressing returns relative to the risk taken to achieve them.
 Sectors with high Sharpe ratios are genuinely efficient at converting risk
 into return, while sectors with low Sharpe ratios are exposing investors to
-volatility without adequate compensation.
-
-Comparing the two models shows the R-squared rises substantially
-when sector fixed effects are added, confirming that sector membership explains
-a meaningful portion of the variation in returns. The change in the volatility
-coefficient between models reveals how much of the raw relationship was driven
-by sector composition versus genuine within-sector risk pricing.
+volatility without adequate compensation. Comparing the two models shows that adding sector effects explains more of the variation in returns. The change in the volatility coefficient shows how much of the relationship was due to sector mix rather than risk being priced within sectors.
 
 
 ```python
@@ -503,10 +468,8 @@ Technology's higher but choppier rewards.
 Energy shows the widest dispersion of any sector, with some stocks delivering
 excellent Sharpe ratios and others performing poorly. This is consistent with
 the commodity-driven nature of energy returns: oil price swings affect all
-energy firms simultaneously but to varying degrees depending on hedging
-strategy, asset mix, and geographic exposure. The result is a sector where
-picking the right individual stock matters enormously, rather than sector
-membership providing a reliable signal.
+energy firms simultaneously. Highly dependent on strategy, asset mix and geographic exposure. 
+Results show that choosing the right stock matters significantly compared to sector membership being a reliability signal. 
 
 ## Stock rankings: who delivered the best returns?
 
@@ -590,21 +553,17 @@ shocks override individual stock characteristics.
 A second, smaller but sustained elevation in volatility is visible from
 late 2021 onwards across all three stocks. This corresponds to the shift in
 Federal Reserve policy from quantitative easing to aggressive rate hikes.
-Higher interest rates are particularly damaging to the valuations of
-long-duration growth assets: because NVDA's value is concentrated in
-expected future earnings many years out, a higher discount rate compresses
-that value sharply. This explains why NVDA shows a noticeably wider volatility
+Higher interest rates are particularly damaging to valuations of
+long-duration growth assets:such as NVDAs value being concentrated on expected future earnings, compressed by higher discount rates.
+This explains why NVDA shows a noticeably wider volatility
 gap relative to AMZN and JNJ in the 2022 to 2023 period compared to the
 preceding years.
 
-What the chart also shows, reassuringly for our cross-sectional analysis,
-is that the relative ordering of the three stocks by volatility is highly
+What the chart also shows is that the relative ordering of the three stocks by volatility is highly
 persistent. NVDA consistently sits above AMZN, which consistently sits above
-JNJ, regardless of the market regime. This means that while the absolute
+JNJ, regardless of the market regime. This means that whilst the absolute
 level of volatility varies dramatically over time, the ranking of stocks by
-riskiness is stable. Our use of a single five-year annualised volatility
-figure to represent each stock's risk profile is therefore a reasonable
-approximation, even if it necessarily averages across very different periods.
+risk is stable. 
 
 
 ## Correlation between risk and return metrics
@@ -649,11 +608,9 @@ short-run variation.
 
 ## Conclusion
 
-This analysis examined whether the textbook risk-return tradeoff holds across 25 large-cap US stocks between January 2019 and January 2024. Using OLS regression, sector fixed effects, and rolling volatility analysis, we find results that are consistent with theory in some respects but reveal important heterogeneity across sectors and time periods.
+This analysis examined whether the textbook risk-return tradeoff holds across 25 large-cap US stocks between January 2019 and January 2024. With the use of OLS regression, sector fixed effects, and rolling volatility analysis, I found results that are consistent with theory in some respects but reveal important heterogeneity across sectors and time periods. Across all stocks, higher volatility is positively associated with higher returns, offering partial support for the CAPM prediction. However, this relationship is substantially driven by sector composition rather than a universal risk premium. When sector fixed effects are added, the R-squared rises considerably, confirming that sector membership is a major determinant of returns and that the simple cross-sectional relationship overstates the strength of the risk-return tradeoff.
 
-Across all stocks, higher volatility is positively associated with higher returns, offering partial support for the CAPM prediction. However, this relationship is substantially driven by sector composition rather than a universal risk premium. When sector fixed effects are added, the R-squared rises considerably, confirming that sector membership is a major determinant of returns and that the simple cross-sectional relationship overstates the strength of the risk-return tradeoff.
-
-The sector-level analysis reveals striking differences. Technology is the one sector where the risk-return tradeoff appears relatively robust, with economically meaningful and positive coefficients. Finance shows a negative beta, suggesting within-sector volatility is not rewarded in financial stocks, likely because bank volatility is driven by credit and regulatory risk rather than priced market risk. Energy and Consumer sectors show near-zero relationships, consistent with the idea that idiosyncratic firm-level volatility in these industries is largely diversifiable and therefore not compensated by the market.
+The sector-level analysis reveals striking differences. Technology is the one sector where the risk-return tradeoff appears relatively robust, with economically meaningful and positive coefficients. Finance shows a negative beta, suggesting within-sector volatility is not rewarded in financial stocks, likely because bank volatility is driven by credit and regulatory risk rather than priced market risk. Energy and Consumer sectors show near-zero relationships, consistent with the idea that idiosyncratic firm-level volatility in these industries are largely diversifiable and therefore not compensated by the market.
 
 There are several important limitations to acknowledge. First, the sample of 25 stocks is small by the standards of empirical asset pricing research, which limits statistical power and means individual outliers can heavily influence results. Second, the sample suffers from survivorship bias: all stocks are large-cap S&P 500 constituents that survived the full five-year period. Firms that were delisted, went bankrupt, or were acquired during this time are excluded entirely. These firms would disproportionately have had high volatility and poor returns, meaning our estimated risk-return relationship is likely biased upward. Third, the sample period is dominated by two unusual episodes: the COVID-19 shock of 2020 and the aggressive Federal Reserve tightening of 2022 to 2023. Both events had asymmetric effects across sectors, potentially distorting the estimated sector-level betas.
 
